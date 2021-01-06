@@ -319,3 +319,182 @@ This signals to the framework that the method is not an action, even if it would
 [NonAction]  
 public string GetPrivateData() { ... }
 
+# Routing and Action Selection in ASP.NET Web API
+=======================================================
+
+Routing has three main phases:
+
+1. Matching the URI to a route template.
+2. Selecting a controller.
+3. Selecting an action.
+
+=> Route Templates
+A route template looks similar to a URI path, but it can have placeholder values, indicated with curly braces:
+"api/{controller}/public/{category}/{id}"
+
+When you create a route, you can provide default values for some or all of the placeholders:
+defaults: new { category = "all" }
+
+You can also provide constraints, which restrict how a URI segment can match a placeholder:
+constraints: new { id = @"\d+" }   // Only matches if "id" is one or more digits.
+
+The framework tries to match the segments in the URI path to the template. Literals in the template must match exactly. 
+A placeholder matches any value, unless you specify constraints. The framework does not match other parts of the URI, such as the host name or the query parameters. 
+The framework selects the first route in the route table that matches the URI.
+
+There are two special placeholders: "{controller}" and "{action}".
+
+"{controller}" provides the name of the controller.
+"{action}" provides the name of the action. In Web API, the usual convention is to omit "{action}".
+
+=> Defaults
+If you provide defaults, the route will match a URI that is missing those segments. For example:
+routes.MapHttpRoute(
+    name: "DefaultApi",
+    routeTemplate: "api/{controller}/{category}",
+    defaults: new { category = "all" }
+);
+
+The URIs http://localhost/api/products/all and http://localhost/api/products match the preceding route.
+In the latter URI, the missing {category} segment is assigned the default value all.
+
+=> Route Dictionary
+If the framework finds a match for a URI, it creates a dictionary that contains the value for each placeholder. 
+The keys are the placeholder names, not including the curly braces. 
+The values are taken from the URI path or from the defaults. 
+The dictionary is stored in the IHttpRouteData object.
+
+A default can have the special value RouteParameter.Optional. 
+If a placeholder gets assigned this value, the value is not added to the route dictionary. For example:
+routes.MapHttpRoute(
+    name: "DefaultApi",
+    routeTemplate: "api/{controller}/{category}/{id}",
+    defaults: new { category = "all", id = RouteParameter.Optional }
+);
+
+For the URI path "api/products", the route dictionary will contain:
+controller: "products"
+category: "all"
+
+For "api/products/toys/123", however, the route dictionary will contain:
+controller: "products"
+category: "toys"
+id: "123"
+
+The defaults can also include a value that does not appear anywhere in the route template. 
+If the route matches, that value is stored in the dictionary. For example:
+routes.MapHttpRoute(
+    name: "Root",
+    routeTemplate: "api/root/{id}",
+    defaults: new { controller = "customers", id = RouteParameter.Optional }
+);
+
+If the URI path is "api/root/8", the dictionary will contain two values:
+controller: "customers"
+id: "8"
+
+=> Selecting a Controller
+Controller selection is handled by the IHttpControllerSelector.SelectController method. 
+This method takes an HttpRequestMessage instance and returns an HttpControllerDescriptor. 
+The default implementation is provided by the DefaultHttpControllerSelector class. This class uses a straightforward algorithm:
+
+1. Look in the route dictionary for the key "controller".
+2. Take the value for this key and append the string "Controller" to get the controller type name.
+3. Look for a Web API controller with this type name.
+
+For example, if the route dictionary contains the key-value pair "controller" = "products", then the controller type is "ProductsController". 
+If there is no matching type, or multiple matches, the framework returns an error to the client.
+
+=> Action Selection
+After selecting the controller, the framework selects the action by calling the IHttpActionSelector.SelectAction method. 
+This method takes an HttpControllerContext and returns an HttpActionDescriptor.
+The default implementation is provided by the ApiControllerActionSelector class.
+
+
+# Attribute Routing in ASP.NET Web API 2
+==============================================
+
+=> Why Attribute Routing?
+One advantage of convention-based routing is that templates are defined in a single place, and the routing rules are applied consistently across all controllers. 
+Unfortunately, convention-based routing makes it hard to support certain URI patterns that are common in RESTful APIs.
+
+/customers/1/orders
+
+This type of URI is difficult to create using convention-based routing. 
+Although it can be done, the results don't scale well if you have many controllers or resource types.
+
+With attribute routing, it's trivial to define a route for this URI. You simply add an attribute to the controller action:
+[Route("customers/{customerId}/orders")]
+public IEnumerable<Order> GetOrdersByCustomer(int customerId) { ... }
+
+Here are some other patterns that attribute routing makes easy.
+
+API versioning
+In this example, "/api/v1/products" would be routed to a different controller than "/api/v2/products".
+
+/api/v1/products /api/v2/products
+
+Overloaded URI segments
+In this example, "1" is an order number, but "pending" maps to a collection.
+
+/orders/1 /orders/pending
+
+Multiple parameter types
+In this example, "1" is an order number, but "2013/06/16" specifies a date.
+
+/orders/1 /orders/2013/06/16
+
+=> Enabling Attribute Routing
+To enable attribute routing, call MapHttpAttributeRoutes during configuration. 
+This extension method is defined in the System.Web.Http.HttpConfigurationExtensions class.
+
+using System.Web.Http;
+
+namespace WebApplication
+{
+    public static class WebApiConfig
+    {
+        public static void Register(HttpConfiguration config)
+        {
+            // Web API routes
+            config.MapHttpAttributeRoutes();
+
+            // Other Web API configuration not shown.
+        }
+    }
+}
+
+Attribute routing can be combined with convention-based routing. To define convention-based routes, call the MapHttpRoute method.
+public static class WebApiConfig
+{
+    public static void Register(HttpConfiguration config)
+    {
+        // Attribute routing.
+        config.MapHttpAttributeRoutes();
+
+        // Convention-based routing.
+        config.Routes.MapHttpRoute(
+            name: "DefaultApi",
+            routeTemplate: "api/{controller}/{id}",
+            defaults: new { id = RouteParameter.Optional }
+        );
+    }
+}
+
+=> Note: Migrating From Web API 1
+Prior to Web API 2, the Web API project templates generated code like this:
+protected void Application_Start()
+{
+    // WARNING - Not compatible with attribute routing.
+    WebApiConfig.Register(GlobalConfiguration.Configuration);
+}
+
+If attribute routing is enabled, this code will throw an exception. 
+If you upgrade an existing Web API project to use attribute routing, make sure to update this configuration code to the following:
+
+protected void Application_Start()
+{
+    // Pass a delegate to the Configure method.
+    GlobalConfiguration.Configure(WebApiConfig.Register);
+}
+
