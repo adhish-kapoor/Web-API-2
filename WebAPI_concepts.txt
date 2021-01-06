@@ -498,3 +498,179 @@ protected void Application_Start()
     GlobalConfiguration.Configure(WebApiConfig.Register);
 }
 
+=> Adding Route Attributes
+public class OrdersController : ApiController
+{
+    [Route("customers/{customerId}/orders")]
+    [HttpGet]
+    public IEnumerable<Order> FindOrdersByCustomer(int customerId) { ... }
+}
+
+The string "customers/{customerId}/orders" is the URI template for the route. Web API tries to match the request URI to the template. 
+In this example, "customers" and "orders" are literal segments, and "{customerId}" is a variable parameter. The following URIs would match this template:
+
+http://localhost/customers/1/orders
+http://localhost/customers/bob/orders
+http://localhost/customers/1234-5678/orders
+
+=> HTTP methods
+The following example maps the CreateBook method to HTTP POST requests
+[Route("api/books")]
+[HttpPost]
+public HttpResponseMessage CreateBook(Book book) { ... }
+
+For all other HTTP methods, including non-standard methods, use the AcceptVerbs attribute, which takes a list of HTTP methods.
+// WebDAV method
+[Route("api/books")]
+[AcceptVerbs("MKCOL")]
+public void MakeCollection() { }
+
+=> Route Prefixes
+Often, the routes in a controller all start with the same prefix. For example:
+public class BooksController : ApiController
+{
+    [Route("api/books")]
+    public IEnumerable<Book> GetBooks() { ... }
+
+    [Route("api/books/{id:int}")]
+    public Book GetBook(int id) { ... }
+
+    [Route("api/books")]
+    [HttpPost]
+    public HttpResponseMessage CreateBook(Book book) { ... }
+}
+
+You can set a common prefix for an entire controller by using the [RoutePrefix] attribute:
+[RoutePrefix("api/books")]
+public class BooksController : ApiController
+{
+    // GET api/books
+    [Route("")]
+    public IEnumerable<Book> Get() { ... }
+
+    // GET api/books/5
+    [Route("{id:int}")]
+    public Book Get(int id) { ... }
+
+    // POST api/books
+    [Route("")]
+    public HttpResponseMessage Post(Book book) { ... }
+}
+
+Use a tilde (~) on the method attribute to override the route prefix:
+[RoutePrefix("api/books")]
+public class BooksController : ApiController
+{
+    // GET /api/authors/1/books
+    [Route("~/api/authors/{authorId:int}/books")]
+    public IEnumerable<Book> GetByAuthor(int authorId) { ... }
+
+    // ...
+}
+
+The route prefix can include parameters:
+[RoutePrefix("customers/{customerId}")]
+public class OrdersController : ApiController
+{
+    // GET customers/1/orders
+    [Route("orders")]
+    public IEnumerable<Order> Get(int customerId) { ... }
+}
+
+=> Route Constraints
+Route constraints let you restrict how the parameters in the route template are matched. 
+The general syntax is "{parameter:constraint}". 
+
+[Route("users/{id:int}")]
+public User GetUserById(int id) { ... }
+
+[Route("users/{name}")]
+public User GetUserByName(string name) { ... }
+
+Here, the first route will only be selected if the "id" segment of the URI is an integer. Otherwise, the second route will be chosen.
+
+Notice that some of the constraints, such as "min", take arguments in parentheses. 
+You can apply multiple constraints to a parameter, separated by a colon.
+[Route("users/{id:int:min(1)}")]
+public User GetUserById(int id) { ... }
+
+=> Route Names
+In Web API, every route has a name. Route names are useful for generating links, so that you can include a link in an HTTP response.
+
+To specify the route name, set the Name property on the attribute. 
+The following example shows how to set the route name, and also how to use the route name when generating a link.
+
+public class BooksController : ApiController
+{
+    [Route("api/books/{id}", Name="GetBookById")]
+    public BookDto GetBook(int id) 
+    {
+        // Implementation not shown...
+    }
+
+    [Route("api/books")]
+    public HttpResponseMessage Post(Book book)
+    {
+        // Validate and add book to database (not shown)
+
+        var response = Request.CreateResponse(HttpStatusCode.Created);
+
+        // Generate a link to the new book and set the Location header in the response.
+        string uri = Url.Link("GetBookById", new { id = book.BookId });
+        response.Headers.Location = new Uri(uri);
+        return response;
+    }
+}
+
+=> Route Order
+When the framework tries to match a URI with a route, it evaluates the routes in a particular order. 
+To specify the order, set the Order property on the route attribute. Lower values are evaluated first. The default order value is zero.
+
+Here is how the total ordering is determined:
+
+1. Compare the Order property of the route attribute.
+
+2. Look at each URI segment in the route template. For each segment, order as follows:
+    a. Literal segments.
+    b. Route parameters with constraints.
+    c. Route parameters without constraints.
+    d. Wildcard parameter segments with constraints.
+    e. Wildcard parameter segments without constraints.
+
+3. In the case of a tie, routes are ordered by a case-insensitive ordinal string comparison (OrdinalIgnoreCase) of the route template.
+
+Here is an example. Suppose you define the following controller:
+[RoutePrefix("orders")]
+public class OrdersController : ApiController
+{
+    [Route("{id:int}")] // constrained parameter
+    public HttpResponseMessage Get(int id) { ... }
+
+    [Route("details")]  // literal
+    public HttpResponseMessage GetDetails() { ... }
+
+    [Route("pending", RouteOrder = 1)]
+    public HttpResponseMessage GetPending() { ... }
+
+    [Route("{customerName}")]  // unconstrained parameter
+    public HttpResponseMessage GetByCustomer(string customerName) { ... }
+
+    [Route("{*date:datetime}")]  // wildcard
+    public HttpResponseMessage Get(DateTime date) { ... }
+}
+
+These routes are ordered as follows.
+
+1. orders/details
+2. orders/{id}
+3. orders/{customerName}
+4. orders/{*date}
+5. orders/pending
+
+Notice that "details" is a literal segment and appears before "{id}", but "pending" appears last because the Order property is 1. 
+(This example assumes there are no customers named "details" or "pending". 
+In general, try to avoid ambiguous routes. 
+In this example, a better route template for GetByCustomer is "customers/{customerName}" )
+
+
+# 
