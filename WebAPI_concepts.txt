@@ -10,11 +10,11 @@ A Web API controller action can return any of the following:
 Depending on which of these is returned, Web API uses a different mechanism to create the HTTP response.
 
 TABLE 1
-Return type              | 	  How Web API creates the response
+Return type              | 	    How Web API creates the response
 void	                        Return empty 204 (No Content)
-HttpResponseMessage	          Convert directly to an HTTP response message.
+HttpResponseMessage	            Convert directly to an HTTP response message.
 IHttpActionResult	            Call ExecuteAsync to create an HttpResponseMessage, then convert to an HTTP response message.
-Other type	                  Write the serialized return value into the response body; return 200 (OK).
+Other type	                    Write the serialized return value into the response body; return 200 (OK).
 
 => void
 If the return type is void, Web API simply returns an empty HTTP response with status code 204 (No Content).
