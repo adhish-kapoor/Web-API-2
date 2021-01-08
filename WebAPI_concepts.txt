@@ -673,4 +673,38 @@ In general, try to avoid ambiguous routes.
 In this example, a better route template for GetByCustomer is "customers/{customerName}" )
 
 
-# 
+# Assemblies
+=====================
+
+System.Net.Http - Client and raw messaging types (HttpResponseMessage class)
+System.Net.Http.Formatting - Model binding and media type formatters
+System.Web.Http - Basic hosting infrastructure (ApiController class)
+System.Web.Http.Common - Common APIs
+System.Web.Http.WebHost - ASP.NET hosting
+System.Web.Http.SelfHost - Self hosting
+System.Web.Http.Data - DataController is an APIController that handles "CRUD" type operations
+System.Web.Http.Data.EntityFramework - Specific implementations of DataController
+System.Web.Http.Data.Helpers - Common code for data API
+
+# Model binding and Formatters
+===================================
+
+1. By default the Web API will bind incoming data to CLR types.
+    -Body, header, and or query string.
+    -Very similar to model binding of ASP.NET MVC
+    
+2. MediaTypeFormatters are used to bind both input and output.
+    -Mapped to content types
+    
+3. Validation via attributes can also be used
+
+4. HttpRequestMessage and HttpResponseMessage can be used to go down further into the HTTP stack.
+    -Enables you to directly set Headers etc.
+    
+# Content Negotiation
+==============================
+
+The Web API handles automatic content negotiation 
+    -Automatically handles Accept headers for XML or JSON
+
+
