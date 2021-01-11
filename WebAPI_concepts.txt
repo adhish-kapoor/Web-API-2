@@ -701,10 +701,139 @@ System.Web.Http.Data.Helpers - Common code for data API
 4. HttpRequestMessage and HttpResponseMessage can be used to go down further into the HTTP stack.
     -Enables you to directly set Headers etc.
     
-# Content Negotiation
+# Media Type
+=================
+
+Media type (aka MIME type) specifies the format of the data as type/subtype e.g. text/html, text/xml, application/json, image/jpeg etc.
+In HTTP request, MIME type is specified in the request header using Accept and Content-Type attribute. 
+1. The Accept header attribute specifies the format of response data which the client expects. 
+2. The Content-Type header attribute specifies the format of the data in the request body so that receiver can parse it into appropriate format.
+
+Web API converts request data into CLR object and also serialize CLR object into response data based on Accept and Content-Type headers. 
+Web API includes built-in support for JSON, XML, BSON, and form-urlencoded data. 
+It means it automatically converts request/response data into these formats OOB (out-of the box).
+
+public class Student
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+
+public class StudentController : ApiController
+{
+    public Student Post(Student student)
+    {
+        // save student into db
+        var insertedStudent = SaveStudent(student);
+
+        return insertedStudent;
+    }
+}
+
+As you can see above, the Post() action method accepts Student type parameter, saves that student into DB and returns inserted student with generated id. 
+The above Web API handles HTTP POST request with JSON or XML data and parses it to a Student object based on Content-Type header value 
+and 
+the same way it converts insertedStudent object into JSON or XML based on Accept header value.
+
+
+# Media-Type Formatters
+===========================
+
+Media type formatters are classes responsible for serializing request/response data so that Web API can understand the request data format 
+and send data in the format which client expects.
+
+Web API includes following built-in media type formatters.
+
+Media Type Formatter Class	            MIME Type	                        Description
+JsonMediaTypeFormatter	                application/json, text/json	        Handles JSON format
+XmlMediaTypeFormatter	                application/xml, text/json	        Handles XML format
+FormUrlEncodedMediaTypeFormatter	    application/x-www-form-urlencoded	Handles HTML form URL-encoded data
+JQueryMvcFormUrlEncodedFormatter	    application/x-www-form-urlencoded	Handles model-bound HTML form URL-encoded data
+
+=> Retrieve Built-in Media Type Formatters
+The following example demonstrates HTTP Get method that returns all built-in formatter classes.
+
+public class FormattersController : ApiController
+{
+    public IEnumerable<string> Get()
+    {
+        IList<string> formatters = new List<string>();
+
+        foreach (var item in GlobalConfiguration.Configuration.Formatters)
+        {
+            formatters.Add(item.ToString());
+        }
+
+        return formatters.AsEnumerable<string>();                                
+    }
+}
+
+GlobalConfiguration.Configuration.Formatters returns MediaTypeFormatterCollection that includes all the formatter classes.
+The above example returns names of all the formatter classes as XML file:
+
+<string>System.Net.Http.Formatting.JsonMediaTypeFormatter</string>
+<string>System.Net.Http.Formatting.XmlMediaTypeFormatter</string>
+<string>System.Net.Http.Formatting.FormUrlEncodedMediaTypeFormatter</string>
+<string>System.Web.Http.ModelBinding.JQueryMvcFormUrlEncodedFormatter</string>
+
+=> BSON Formatter
+Web API also supports BSON format. As the name suggests, BSON is binary JSON, it is a binary-encoded serialization of JSON-like documents. 
+Currently there is very little support for BSON and no JavaScript implementation is available for clients running in browsers. 
+This means that it is not possible to retrieve and automatically parse BSON data to JavaScript objects.
+
+Web API includes built-in formatter class BsonMediaTypeFormatter for BSON but it is disabled by default.
+
+=> JSON Formatter
+Web API includes JsonMediaTypeFormatter class that handles JSON format. 
+The JsonMediaTypeFormatter converts JSON data in an HTTP request into CLR objects (object in C# or VB.NET) and 
+also converts CLR objects into JSON format that is embeded within HTTP response.
+
+Internally, JsonMediaTypeFormatter uses third-party open source library called Json.NET to perform serialization.
+
+=> Configure JSON Serialization
+JSON formatter can be configured in WebApiConfig class. 
+The JsonMediaTypeFormatter class includes various properties and methods using which you can customize JSON serialization. 
+For example, Web API writes JSON property names with PascalCase by default. 
+To write JSON property names with camelCase, set the CamelCasePropertyNamesContractResolver on the serializer settings as shown below.
+
+public static class WebApiConfig
+{
+    public static void Register(HttpConfiguration config)
+    {
+        config.MapHttpAttributeRoutes();
+            
+        config.Routes.MapHttpRoute(
+            name: "DefaultApi",
+            routeTemplate: "api/{controller}/{id}",
+            defaults: new { id = RouteParameter.Optional }
+        );
+
+        // configure json formatter
+        JsonMediaTypeFormatter jsonFormatter = config.Formatters.JsonFormatter;
+
+        jsonFormatter.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+    }
+}
+
+=> XML Formatter
+The XmlMediaTypeFormatter class is responsible for serializing model objects into XML data. 
+It uses System.Runtime.DataContractSerializer class to generate XML data.
+
+
+# Web API Filters
 ==============================
 
-The Web API handles automatic content negotiation 
-    -Automatically handles Accept headers for XML or JSON
+Web API includes filters to add extra logic before or after action method executes.
+Filters are actually attributes that can be applied on the Web API controller or one or more action methods. 
+Every filter attribute class must implement IFilter interface included in System.Web.Http.Filters namespace.
 
+The following table lists important interfaces and classes that can be used to create Web API filters.
+
+Filter Type	            Interface	            Class	                        Description
+Simple Filter	        IFilter	                -	                            Defines the methods that are used in a filter
+Action Filter	        IActionFilter	        ActionFilterAttribute	        Used to add extra logic before or after action methods execute.
+Authentication Filter	IAuthenticationFilter	-	                            Used to force users or clients to be authenticated before action methods execute.
+Authorization Filter	IAuthorizationFilter	AuthorizationFilterAttribute	Used to restrict access to action methods to specific users or groups.
+Exception Filter	    IExceptionFilter	    ExceptionFilterAttribute	    Used to handle all unhandled exception in Web API.
+Override Filter	        IOverrideFilter	        -	                            Used to customize the behaviour of other filter for individual action method
 
