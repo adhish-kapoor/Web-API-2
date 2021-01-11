@@ -829,11 +829,34 @@ Every filter attribute class must implement IFilter interface included in System
 
 The following table lists important interfaces and classes that can be used to create Web API filters.
 
-Filter Type	            Interface	            Class	                        Description
-Simple Filter	        IFilter	                -	                            Defines the methods that are used in a filter
-Action Filter	        IActionFilter	        ActionFilterAttribute	        Used to add extra logic before or after action methods execute.
-Authentication Filter	IAuthenticationFilter	-	                            Used to force users or clients to be authenticated before action methods execute.
-Authorization Filter	IAuthorizationFilter	AuthorizationFilterAttribute	Used to restrict access to action methods to specific users or groups.
-Exception Filter	    IExceptionFilter	    ExceptionFilterAttribute	    Used to handle all unhandled exception in Web API.
-Override Filter	        IOverrideFilter	        -	                            Used to customize the behaviour of other filter for individual action method
+Filter Type	                Interface	            Class	                        Description
+Simple Filter	            IFilter	                -	                            Defines the methods that are used in a filter
+Action Filter	            IActionFilter	        ActionFilterAttribute	        Used to add extra logic before or after action methods execute.
+Authentication Filter	    IAuthenticationFilter	-	                            Used to force users or clients to be authenticated before action methods execute.
+Authorization Filter	    IAuthorizationFilter	AuthorizationFilterAttribute	Used to restrict access to action methods to specific users or groups.
+Exception Filter	        IExceptionFilter	    ExceptionFilterAttribute	    Used to handle all unhandled exception in Web API.
+Override Filter	            IOverrideFilter	        -	                            Used to customize the behaviour of other filter for individual action method
+
+
+# HttpClient
+==================
+
+The .NET 2.0 included WebClient class to communicate with web server using HTTP protocol. However, WebClient class had some limitations. 
+The .NET 4.5 includes HttpClient class to overcome the limitation of WebClient.
+
+The following table lists all the methods of HttpClient to send different HTTP requests.
+
+Method Name	                Description
+GetAsync	                Sends a GET request to the specified Uri as an asynchronous operation.
+GetByteArrayAsync	        Sends a GET request to the specified Uri and returns the response body as a byte array in an asynchronous operation.
+GetStreamAsync	            Sends a GET request to the specified Uri and returns the response body as a stream in an asynchronous operation.
+GetStringAsync	            Sends a GET request to the specified Uri and returns the response body as a string in an asynchronous operation.
+PostAsync	                Sends a POST request to the specified Uri as an asynchronous operation.
+PostAsJsonAsync	            Sends a POST request as an asynchronous operation to the specified Uri with the given value serialized as JSON.
+PostAsXmlAsync	            Sends a POST request as an asynchronous operation to the specified Uri with the given value serialized as XML.
+PutAsync	                Sends a PUT request to the specified Uri as an asynchronous operation.
+PutAsJsonAsync	            Sends a PUT request as an asynchronous operation to the specified Uri with the given value serialized as JSON.
+PutAsXmlAsync	            Sends a PUT request as an asynchronous operation to the specified Uri with the given value serialized as XML.
+DeleteAsync	                Sends a DELETE request to the specified Uri as an asynchronous operation.
+
 
