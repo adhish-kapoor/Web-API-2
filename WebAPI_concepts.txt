@@ -844,7 +844,34 @@ To create an exception filter, you need to implement the IExceptionFilter interf
 You can also create exception filters by extending the abstract class ExceptionFilterAttribute and then overriding the OnException method. 
 Note that the ExceptionFilterAttribute abstract class in turn implements the IExceptionFilter interface.
 
+You can register your exception filters in one of the following three ways:
 
+1. At the action level
+2. At the controller level
+3. Globally
+
+The following code snippet shows how you can apply a filter at the action level, i.e., to your controller action method.
+
+public class EmployeesController : ApiController
+{
+    [NotImplementedExceptionFilter]
+    public Employee GetEmployee(int id)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+To apply the exception filter at the controller level, you would need to use the filter attribute at the class level as shown below.
+
+[DatabaseExceptionFilter]
+public class EmployeesController : ApiController
+{
+    //Some code
+}
+
+You can also apply your custom exception filter globally so that it works for all of the Web API controllers. 
+
+GlobalConfiguration.Configuration.Filters.Add(new DatabaseExceptionFilterAttribute());
 
 
 # HttpClient
@@ -884,5 +911,4 @@ In version 2.0, the Web API framework has been enhanced to support the following
 1. $expand causes related entities to be included inline in the response.
 2. $select selects a subset of properties to include in the response.
 3. $value gets the raw value of a property.
-
 
