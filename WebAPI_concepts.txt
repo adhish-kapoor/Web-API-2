@@ -837,6 +837,15 @@ Authorization Filter	    IAuthorizationFilter	AuthorizationFilterAttribute	Used 
 Exception Filter	        IExceptionFilter	    ExceptionFilterAttribute	    Used to handle all unhandled exception in Web API.
 Override Filter	            IOverrideFilter	        -	                            Used to customize the behaviour of other filter for individual action method
 
+# Using exception filters in ASP.NET Web API
+=================================================
+
+To create an exception filter, you need to implement the IExceptionFilter interface. 
+You can also create exception filters by extending the abstract class ExceptionFilterAttribute and then overriding the OnException method. 
+Note that the ExceptionFilterAttribute abstract class in turn implements the IExceptionFilter interface.
+
+
+
 
 # HttpClient
 ==================
@@ -858,5 +867,22 @@ PutAsync	                Sends a PUT request to the specified Uri as an asynchro
 PutAsJsonAsync	            Sends a PUT request as an asynchronous operation to the specified Uri with the given value serialized as JSON.
 PutAsXmlAsync	            Sends a PUT request as an asynchronous operation to the specified Uri with the given value serialized as XML.
 DeleteAsync	                Sends a DELETE request to the specified Uri as an asynchronous operation.
+
+
+# New features in Web API 2
+=================================
+
+In version 2.0, the Web API framework has been enhanced to support the following features:
+
+1. IHttpActionResult return type
+2. A new Routing Attribute
+3. Support for Cross-Origin requests using CORS
+4. Securing ASP.NET Web API using OAuth 2.0
+5. Support for $expand, $select in OData Service
+
+=> Using $select, $expand, and $value in ASP.NET Web API 2 OData
+1. $expand causes related entities to be included inline in the response.
+2. $select selects a subset of properties to include in the response.
+3. $value gets the raw value of a property.
 
 
